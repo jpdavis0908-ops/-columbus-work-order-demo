@@ -223,5 +223,78 @@ window.addEventListener("load", async () => {
 });
 </script>
 
+
+<div id="dispatchModal" class="modal hidden">
+  <div class="modal-card dispatch-modal-card">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Sams Electric Dispatch</p>
+        <h3 id="dispatchTitle">Update Work Order</h3>
+      </div>
+      <button class="icon-btn" id="closeDispatch" aria-label="Close">×</button>
+    </div>
+
+    <div class="dispatch-summary" id="dispatchSummary"></div>
+
+    <div class="dispatch-grid">
+      <label>Status
+        <select id="dispatchStatus">
+          <option>Submitted</option>
+          <option>Acknowledged</option>
+          <option>Scheduled</option>
+          <option>Technician En Route</option>
+          <option>In Progress</option>
+          <option>Waiting on City</option>
+          <option>Completed</option>
+          <option>Cancelled</option>
+        </select>
+      </label>
+
+      <label>Scheduled Date / Time
+        <input id="dispatchScheduledFor" type="datetime-local">
+      </label>
+
+      <label>Crew
+        <select id="dispatchCrew">
+          <option value="">Unassigned</option>
+          <option>Crew 1</option>
+          <option>Crew 2</option>
+          <option>Crew 3</option>
+          <option>Crew 4</option>
+          <option>Service / On-Call</option>
+        </select>
+      </label>
+
+      <label>Technician
+        <input id="dispatchTechnician" type="text" placeholder="Technician or crew leader">
+      </label>
+    </div>
+
+    <label>Internal Sams Electric Note
+      <textarea id="dispatchInternalNote" rows="3" placeholder="Office / dispatch note. Not visible to City users."></textarea>
+    </label>
+
+    <label>City-Visible Update
+      <textarea id="dispatchCityNote" rows="3" placeholder="Optional update that may be visible to the City requestor."></textarea>
+    </label>
+
+    <label>Completion Summary
+      <textarea id="dispatchCompletionSummary" rows="3" placeholder="Work performed / resolution. Complete this when closing the job."></textarea>
+    </label>
+
+    <div id="dispatchMessage" class="auth-message hidden"></div>
+
+    <div class="dispatch-actions">
+      <button class="btn primary" id="saveDispatch">Save Dispatch Update</button>
+      <button class="btn quiet" id="cancelDispatch">Cancel</button>
+    </div>
+
+    <div class="dispatch-history">
+      <h4>Work Order History</h4>
+      <div id="dispatchHistory"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

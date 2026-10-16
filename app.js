@@ -353,3 +353,148 @@ window.SamsPortalAPI.supabase.auth.onAuthStateChange(() => {
 updateAuthUI().then(()=>refreshLiveOrdersIfAvailable());
 
 openWorkOrderFromEmailLink();
+
+
+let activeDispatchWorkOrder = null;
+
+function dispatchEsc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[c]));
+}
+
+function toLocalInputValue(iso) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function setDispatchMessage(message, kind="") {
+  const el = document.getElementById("dispatchMessage");
+  if (!el) return;
+  el.textContent = message || "";
+  el.className = "auth-message" + (kind ? " " + kind : "") + (!message ? " hidden" : "");
+}
+
+function renderDispatchHistory(order) {
+  const el = document.getElementById("dispatchHistory");
+  if (!el) return;
+
+  const events = [...(order.work_order_events || [])]
+    .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if (!events.length) {
+    el.innerHTML = '<div class="muted-copy">No dispatch history yet.</div>';
+    return;
+  }
+
+  el.innerHTML = events.map(evt => `
+    <div class="dispatch-history-item">
+      <strong>${dispatchEsc(evt.to_status || evt.event_type || "Update")}</strong>
+      ${evt.visible_to_city === false
+        ? '<span class="dispatch-private">Internal</span>'
+        : '<span class="dispatch-public">City-visible</span>'}
+      ${evt.message ? `<div>${dispatchEsc(evt.message)}</div>` : ""}
+      <small>${evt.actor_name ? dispatchEsc(evt.actor_name) + " · " : ""}${evt.created_at ? new Date(evt.created_at).toLocaleString() : ""}</small>
+    </div>
+  `).join("");
+}
+
+async function openDispatchControls(orderNumber) {
+  try {
+    const session = await window.SamsPortalAPI.getSession();
+    if (!session) {
+      alert("Sign in as Sams Electric staff to dispatch this work order.");
+      return;
+    }
+
+    const result = await window.SamsPortalAPI.getWorkOrderByNumber(orderNumber);
+    const order = result?.work_order || result;
+    if (!order) throw new Error("Work order could not be loaded.");
+
+    activeDispatchWorkOrder = order;
+
+    document.getElementById("dispatchTitle").textContent = `Dispatch ${order.work_order_number}`;
+    document.getElementById("dispatchSummary").innerHTML = `
+      <strong>${dispatchEsc(order.facility_name || "Facility")}</strong>
+      <div>${dispatchEsc(order.priority || "Routine")} · ${dispatchEsc(order.category || "Electrical")}</div>
+      <div style="margin-top:4px">${dispatchEsc(order.description || "")}</div>
+    `;
+
+    document.getElementById("dispatchStatus").value = order.status || "Submitted";
+    document.getElementById("dispatchScheduledFor").value = toLocalInputValue(order.scheduled_for);
+    document.getElementById("dispatchCrew").value = order.assigned_crew || "";
+    document.getElementById("dispatchTechnician").value = order.assigned_technician || "";
+    document.getElementById("dispatchInternalNote").value = "";
+    document.getElementById("dispatchCityNote").value = "";
+    document.getElementById("dispatchCompletionSummary").value = order.completion_summary || "";
+
+    renderDispatchHistory(order);
+    setDispatchMessage("");
+    document.getElementById("dispatchModal").classList.remove("hidden");
+  } catch (err) {
+    console.error("Dispatch load:", err);
+    alert(err.message || "Unable to load dispatch controls.");
+  }
+}
+
+async function saveDispatchUpdate() {
+  if (!activeDispatchWorkOrder) return;
+
+  const btn = document.getElementById("saveDispatch");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+  setDispatchMessage("");
+
+  try {
+    const scheduledLocal = document.getElementById("dispatchScheduledFor").value;
+    const payload = {
+      work_order_number: activeDispatchWorkOrder.work_order_number,
+      status: document.getElementById("dispatchStatus").value,
+      scheduled_for: scheduledLocal ? new Date(scheduledLocal).toISOString() : null,
+      assigned_crew: document.getElementById("dispatchCrew").value,
+      assigned_technician: document.getElementById("dispatchTechnician").value.trim(),
+      internal_note: document.getElementById("dispatchInternalNote").value.trim(),
+      city_note: document.getElementById("dispatchCityNote").value.trim(),
+      completion_summary: document.getElementById("dispatchCompletionSummary").value.trim(),
+    };
+
+    const result = await window.SamsPortalAPI.updateWorkOrder(payload);
+    activeDispatchWorkOrder = result.work_order;
+
+    renderDispatchHistory(activeDispatchWorkOrder);
+    document.getElementById("dispatchInternalNote").value = "";
+    document.getElementById("dispatchCityNote").value = "";
+
+    setDispatchMessage("Dispatch update saved.", "success");
+    await refreshLiveOrdersIfAvailable();
+  } catch (err) {
+    console.error("Dispatch save:", err);
+    setDispatchMessage(err.message || "Unable to save dispatch update.", "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Save Dispatch Update";
+  }
+}
+
+const dispatchModal = document.getElementById("dispatchModal");
+const closeDispatch = document.getElementById("closeDispatch");
+const cancelDispatch = document.getElementById("cancelDispatch");
+const saveDispatch = document.getElementById("saveDispatch");
+
+if (closeDispatch) closeDispatch.onclick = () => dispatchModal.classList.add("hidden");
+if (cancelDispatch) cancelDispatch.onclick = () => dispatchModal.classList.add("hidden");
+if (saveDispatch) saveDispatch.onclick = saveDispatchUpdate;
+if (dispatchModal) dispatchModal.onclick = e => {
+  if (e.target.id === "dispatchModal") dispatchModal.classList.add("hidden");
+};
+
+document.addEventListener("click", async e => {
+  const btn = e.target.closest("[data-dispatch-order]");
+  if (!btn) return;
+  e.preventDefault();
+  await openDispatchControls(btn.dataset.dispatchOrder);
+});
+

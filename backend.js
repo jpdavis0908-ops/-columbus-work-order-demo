@@ -79,10 +79,11 @@
 
   async function updateWorkOrder(payload) {
     const { data, error } = await client.functions.invoke(
-      cfg.UPDATE_FUNCTION_NAME || "update-work-order",
+      "update-work-order",
       { body: payload }
     );
     if (error) throw error;
+    if (data?.error) throw new Error(data.error);
     return data;
   }
 
