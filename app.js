@@ -101,6 +101,32 @@ document.getElementById("workOrderForm").addEventListener("submit", async (e) =>
     box.classList.remove("hidden");
     box.scrollIntoView({ behavior: "smooth", block: "center" });
 
+    // Immediately show the new submission in this browser's dashboard.
+    // This does not expose other database work orders to anonymous visitors.
+    const current = getOrders();
+    current.unshift({
+      id: result.work_order_number,
+      dbId: result.work_order_id || "",
+      cityWo: payload.city_work_order_number || "",
+      department: payload.department,
+      facility: payload.facility_name,
+      address: payload.address || "",
+      requester: payload.requester_name,
+      priority: payload.priority,
+      category: payload.category,
+      description: payload.description,
+      accessNotes: payload.access_instructions || "",
+      powerOut: payload.power_out || "No",
+      lifeSafety: payload.life_safety ? "Yes" : "No",
+      technician: "Awaiting Dispatch",
+      status: result.status || "Submitted",
+      updated: new Date().toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric"}),
+      photos: [],
+      history: ["Submitted"]
+    });
+    saveOrders(current);
+    render();
+
     e.target.reset();
     await refreshLiveOrdersIfAvailable();
   } catch (err) {

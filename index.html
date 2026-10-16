@@ -199,11 +199,11 @@ window.addEventListener("load", async () => {
     if (!window.SamsPortalAPI) throw new Error("API helper not loaded");
     const { data, error } = await window.SamsPortalAPI.supabase.from("facilities").select("code").eq("code","GOVCTR01").limit(1);
     if (error) throw error;
-    el.textContent = "Supabase: connected";
+    el.textContent = "Database: connected";
     el.style.background = "#067647";
     setTimeout(() => el.remove(), 3500);
   } catch (e) {
-    el.textContent = "Supabase: connection error";
+    el.textContent = "Database: connection error";
     el.style.background = "#b42318";
     console.error("Supabase connection test:", e);
   }

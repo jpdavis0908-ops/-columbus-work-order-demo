@@ -1,0 +1,3 @@
+Upload/replace these files in your GitHub Pages repository root.
+This version fixes public submissions so the newly created work order appears immediately in the portal dashboard.
+The actual database record is still created by the deployed Supabase Edge Function.
