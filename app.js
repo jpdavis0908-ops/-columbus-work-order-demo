@@ -291,12 +291,20 @@ staffSignIn.onclick = async () => {
   setLoginMessage("");
 
   try {
-    await window.SamsPortalAPI.signIn(email, password);
+    const result = await window.SamsPortalAPI.signIn(email, password);
+    if (!result || !result.session) {
+      throw new Error("Supabase did not return an authenticated session.");
+    }
+
+    setLoginMessage("Signed in. Verifying staff access...", "success");
+
+    // The auth-state event is deferred above, so it is now safe to query profile/session.
     const authorized = await updateAuthUI();
     if (!authorized) return;
+
     setLoginMessage("Signed in. Loading live work orders...", "success");
     await refreshLiveOrdersIfAvailable();
-    setTimeout(() => loginModal.classList.add("hidden"), 500);
+    setTimeout(() => loginModal.classList.add("hidden"), 700);
   } catch (err) {
     console.error("Sign in:", err);
     setLoginMessage(err.message || "Sign in failed.", "error");
@@ -333,8 +341,12 @@ refreshDashboard.onclick = async () => {
   else render();
 };
 
-window.SamsPortalAPI.supabase.auth.onAuthStateChange(async () => {
-  await updateAuthUI();
+window.SamsPortalAPI.supabase.auth.onAuthStateChange(() => {
+  // Do not call Supabase auth APIs from inside the auth callback itself.
+  // Defer the UI/profile refresh until the auth event has fully completed.
+  setTimeout(() => {
+    updateAuthUI().then(() => refreshLiveOrdersIfAvailable());
+  }, 0);
 });
 
 (function(){let seed=17,g=qrGrid;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}for(let r=0;r<21;r++)for(let c=0;c<21;c++){let cell=document.createElement("div"),dark=rnd()>.52,f=(r<7&&c<7)||(r<7&&c>13)||(r>13&&c<7);if(f){let rr=r<7?r:r-14,cc=c<7?c:c-14;dark=rr===0||rr===6||cc===0||cc===6||(rr>=2&&rr<=4&&cc>=2&&cc<=4)}cell.className="qr-cell"+(dark?" dark":"");g.appendChild(cell)}})();render();
