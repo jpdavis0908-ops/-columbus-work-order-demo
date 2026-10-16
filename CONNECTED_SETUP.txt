@@ -1,0 +1,23 @@
+SAMS ELECTRIC COLUMBUS PORTAL — CONNECTED BUILD
+
+Supabase Project:
+zsnyrthaatjuilafrwac
+
+Supabase URL:
+https://zsnyrthaatjuilafrwac.supabase.co
+
+This build already includes the PUBLIC publishable key supplied for this project.
+
+IMPORTANT:
+- This public key is safe for browser use.
+- No service-role key or database password is included.
+- The portal will not successfully create work orders until the
+  `submit-work-order` Supabase Edge Function is deployed.
+- Email will not send until the Resend secret/configuration is added.
+
+Next deployment step:
+1. Deploy submit-work-order
+2. Set email secrets
+3. Publish this folder to GitHub Pages
+4. Submit a test request
+5. Verify the work_orders table receives it

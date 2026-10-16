@@ -188,5 +188,27 @@
 <script src="config.js"></script>
 <script src="backend.js"></script>
 <script src="app.js"></script>
+
+<div id="connectionStatus" style="position:fixed;right:14px;bottom:14px;z-index:9999;background:#0b2340;color:white;padding:8px 12px;border-radius:10px;font:12px Arial,sans-serif;box-shadow:0 6px 18px rgba(0,0,0,.2)">
+  Supabase: checking…
+</div>
+<script>
+window.addEventListener("load", async () => {
+  const el = document.getElementById("connectionStatus");
+  try {
+    if (!window.SamsPortalAPI) throw new Error("API helper not loaded");
+    const { data, error } = await window.SamsPortalAPI.supabase.from("facilities").select("code").eq("code","GOVCTR01").limit(1);
+    if (error) throw error;
+    el.textContent = "Supabase: connected";
+    el.style.background = "#067647";
+    setTimeout(() => el.remove(), 3500);
+  } catch (e) {
+    el.textContent = "Supabase: connection error";
+    el.style.background = "#b42318";
+    console.error("Supabase connection test:", e);
+  }
+});
+</script>
+
 </body>
 </html>

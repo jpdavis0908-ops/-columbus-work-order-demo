@@ -1,4 +1,40 @@
 
+async function refreshLiveOrdersIfAvailable() {
+  try {
+    if (!window.SamsPortalAPI) return;
+    const { data: { user } } = await window.SamsPortalAPI.supabase.auth.getUser();
+    if (!user) return;
+
+    const live = await window.SamsPortalAPI.getWorkOrders();
+    if (!Array.isArray(live)) return;
+
+    localStorage.setItem(key, JSON.stringify(live.map(o => ({
+      id: o.work_order_number,
+      dbId: o.id,
+      cityWo: o.city_work_order_number || "",
+      department: o.department,
+      facility: o.facility_name,
+      address: o.address || "",
+      requester: o.requester_name,
+      priority: o.priority,
+      category: o.category,
+      description: o.description,
+      accessNotes: o.access_instructions || "",
+      powerOut: o.power_out || "No",
+      lifeSafety: o.life_safety ? "Yes" : "No",
+      technician: o.assigned_technician || o.assigned_crew || "Unassigned",
+      status: o.status,
+      updated: new Date(o.updated_at || o.submitted_at).toLocaleDateString("en-US", {month:"short",day:"numeric",year:"numeric"}),
+      photos: [],
+      history: [o.status]
+    }))));
+    render();
+  } catch (err) {
+    console.warn("Live dashboard refresh skipped:", err);
+  }
+}
+
+
 const seedWorkOrders=[
 {id:"SAMS-COC-0008",cityWo:"CCG-DEMO-1088",department:"Facilities Maintenance",facility:"Government Center",address:"Columbus, GA",requester:"Demo User",priority:"Routine",category:"Lighting",description:"Replace several failed LED fixtures in administrative corridor.",accessNotes:"Coordinate with facilities office.",powerOut:"No",lifeSafety:"No",technician:"Crew 3",status:"Completed",updated:"Sep 5, 2026",photos:["hallway-light.jpg"],history:["Submitted","Acknowledged","Scheduled","In Progress","Completed"]},
 {id:"SAMS-COC-0007",cityWo:"CCG-DEMO-1081",department:"Parks & Recreation",facility:"Psalmond Road Supercenter",address:"Columbus, GA",requester:"Demo User",priority:"Priority",category:"Breaker / Panel",description:"Breaker trips intermittently serving equipment receptacles.",accessNotes:"Meet site supervisor at front entrance.",powerOut:"Partial",lifeSafety:"No",technician:"Crew 2",status:"Technician En Route",updated:"Sep 6, 2026",photos:[],history:["Submitted","Acknowledged","Technician En Route"]},
@@ -66,6 +102,7 @@ document.getElementById("workOrderForm").addEventListener("submit", async (e) =>
     box.scrollIntoView({ behavior: "smooth", block: "center" });
 
     e.target.reset();
+    await refreshLiveOrdersIfAvailable();
   } catch (err) {
     console.error(err);
     alert("Unable to submit the work order. The Supabase submit-work-order function may not be deployed yet.");
@@ -76,9 +113,9 @@ document.getElementById("workOrderForm").addEventListener("submit", async (e) =>
     }
   }
 });
-orders.unshift(o);saveOrders(orders);render();successBox.innerHTML=`<b>Work Order Received</b><br><br>Demo work order <b>${esc(id)}</b> has been created.<br>Status: <b>Submitted</b><br>Priority: <b>${esc(o.priority)}</b><br>Facility: <b>${esc(o.facility)}</b><br><br>This is demonstration data only.`;successBox.classList.remove("hidden");successBox.scrollIntoView({behavior:"smooth",block:"center"});e.target.reset()}
 searchInput.oninput=render;statusFilter.onchange=render;resetDemo.onclick=()=>{localStorage.removeItem(key);render();alert("Demo data has been reset.")};
 closeModal.onclick=closeModalBottom.onclick=()=>modal.classList.add("hidden");modal.onclick=e=>{if(e.target.id==="modal")modal.classList.add("hidden")};printWorkOrder.onclick=()=>window.print();
 document.querySelectorAll("[data-scroll]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav").forEach(n=>n.classList.remove("active"));if(b.classList.contains("nav"))b.classList.add("active");document.getElementById(b.dataset.scroll).scrollIntoView({behavior:"smooth"})});
 loginBtn.onclick=()=>loginModal.classList.remove("hidden");closeLogin.onclick=enterDemo.onclick=()=>loginModal.classList.add("hidden");loginModal.onclick=e=>{if(e.target.id==="loginModal")loginModal.classList.add("hidden")};
 (function(){let seed=17,g=qrGrid;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}for(let r=0;r<21;r++)for(let c=0;c<21;c++){let cell=document.createElement("div"),dark=rnd()>.52,f=(r<7&&c<7)||(r<7&&c>13)||(r>13&&c<7);if(f){let rr=r<7?r:r-14,cc=c<7?c:c-14;dark=rr===0||rr===6||cc===0||cc===6||(rr>=2&&rr<=4&&cc>=2&&cc<=4)}cell.className="qr-cell"+(dark?" dark":"");g.appendChild(cell)}})();render();
+refreshLiveOrdersIfAvailable();
