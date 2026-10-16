@@ -207,8 +207,137 @@ document.getElementById("workOrderForm").addEventListener("submit", async (e) =>
 searchInput.oninput=render;statusFilter.onchange=render;resetDemo.onclick=()=>{localStorage.removeItem(key);render();alert("Demo data has been reset.")};
 closeModal.onclick=closeModalBottom.onclick=()=>modal.classList.add("hidden");modal.onclick=e=>{if(e.target.id==="modal")modal.classList.add("hidden")};printWorkOrder.onclick=()=>window.print();
 document.querySelectorAll("[data-scroll]").forEach(b=>b.onclick=()=>{document.querySelectorAll(".nav").forEach(n=>n.classList.remove("active"));if(b.classList.contains("nav"))b.classList.add("active");document.getElementById(b.dataset.scroll).scrollIntoView({behavior:"smooth"})});
-loginBtn.onclick=()=>loginModal.classList.remove("hidden");closeLogin.onclick=enterDemo.onclick=()=>loginModal.classList.add("hidden");loginModal.onclick=e=>{if(e.target.id==="loginModal")loginModal.classList.add("hidden")};
+
+const loginBtn = document.getElementById("loginBtn");
+const loginModal = document.getElementById("loginModal");
+const closeLogin = document.getElementById("closeLogin");
+const staffSignIn = document.getElementById("staffSignIn");
+const staffSignOut = document.getElementById("staffSignOut");
+const refreshLiveDashboard = document.getElementById("refreshLiveDashboard");
+const refreshDashboard = document.getElementById("refreshDashboard");
+
+function setLoginMessage(message, kind="") {
+  const el = document.getElementById("loginMessage");
+  el.textContent = message || "";
+  el.className = "auth-message" + (kind ? " " + kind : "") + (!message ? " hidden" : "");
+}
+
+async function updateAuthUI() {
+  try {
+    const session = await window.SamsPortalAPI.getSession();
+    const loginFields = document.getElementById("loginFields");
+    const signedInPanel = document.getElementById("signedInPanel");
+    const dashboardMode = document.getElementById("dashboardMode");
+
+    if (!session) {
+      loginFields.classList.remove("hidden");
+      signedInPanel.classList.add("hidden");
+      document.getElementById("userName").textContent = "Sams Electric Staff";
+      document.getElementById("userRole").textContent = "Sign in for live dispatch dashboard";
+      document.getElementById("userAvatar").textContent = "SE";
+      dashboardMode.textContent = "Demo / Local";
+      return false;
+    }
+
+    const profile = await window.SamsPortalAPI.getProfile();
+    if (!profile || !profile.active || !["sams_admin","sams_dispatch"].includes(profile.role)) {
+      await window.SamsPortalAPI.signOut();
+      throw new Error("This account is not authorized for the Sams Electric staff dashboard.");
+    }
+
+    loginFields.classList.add("hidden");
+    signedInPanel.classList.remove("hidden");
+
+    const name = profile.full_name || profile.email || "Sams Electric Staff";
+    const initials = name.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join("").toUpperCase() || "SE";
+    const roleLabel = profile.role === "sams_admin" ? "Sams Admin" : "Sams Dispatch";
+
+    document.getElementById("userName").textContent = name;
+    document.getElementById("userRole").textContent = roleLabel + " · Live database";
+    document.getElementById("userAvatar").textContent = initials;
+    document.getElementById("signedInName").textContent = name;
+    document.getElementById("signedInEmail").textContent = profile.email || "";
+    document.getElementById("signedInRole").textContent = roleLabel;
+    dashboardMode.textContent = "LIVE";
+    return true;
+  } catch (err) {
+    console.error("Auth UI:", err);
+    setLoginMessage(err.message || "Unable to verify staff account.", "error");
+    return false;
+  }
+}
+
+loginBtn.onclick = async () => {
+  setLoginMessage("");
+  await updateAuthUI();
+  loginModal.classList.remove("hidden");
+};
+
+closeLogin.onclick = () => loginModal.classList.add("hidden");
+loginModal.onclick = e => {
+  if (e.target.id === "loginModal") loginModal.classList.add("hidden");
+};
+
+staffSignIn.onclick = async () => {
+  const email = document.getElementById("staffEmail").value.trim();
+  const password = document.getElementById("staffPassword").value;
+  if (!email || !password) {
+    setLoginMessage("Enter your email and password.", "error");
+    return;
+  }
+
+  staffSignIn.disabled = true;
+  staffSignIn.textContent = "Signing In...";
+  setLoginMessage("");
+
+  try {
+    await window.SamsPortalAPI.signIn(email, password);
+    const authorized = await updateAuthUI();
+    if (!authorized) return;
+    setLoginMessage("Signed in. Loading live work orders...", "success");
+    await refreshLiveOrdersIfAvailable();
+    setTimeout(() => loginModal.classList.add("hidden"), 500);
+  } catch (err) {
+    console.error("Sign in:", err);
+    setLoginMessage(err.message || "Sign in failed.", "error");
+  } finally {
+    staffSignIn.disabled = false;
+    staffSignIn.textContent = "Sign In";
+  }
+};
+
+staffSignOut.onclick = async () => {
+  try {
+    await window.SamsPortalAPI.signOut();
+    document.getElementById("loginFields").classList.remove("hidden");
+    document.getElementById("signedInPanel").classList.add("hidden");
+    document.getElementById("dashboardMode").textContent = "Demo / Local";
+    document.getElementById("userName").textContent = "Sams Electric Staff";
+    document.getElementById("userRole").textContent = "Sign in for live dispatch dashboard";
+    document.getElementById("userAvatar").textContent = "SE";
+    setLoginMessage("Signed out.", "success");
+    render();
+  } catch (err) {
+    setLoginMessage(err.message || "Unable to sign out.", "error");
+  }
+};
+
+refreshLiveDashboard.onclick = async () => {
+  await refreshLiveOrdersIfAvailable();
+  setLoginMessage("Live dashboard refreshed.", "success");
+};
+
+refreshDashboard.onclick = async () => {
+  const live = await updateAuthUI();
+  if (live) await refreshLiveOrdersIfAvailable();
+  else render();
+};
+
+window.SamsPortalAPI.supabase.auth.onAuthStateChange(async () => {
+  await updateAuthUI();
+});
+
 (function(){let seed=17,g=qrGrid;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}for(let r=0;r<21;r++)for(let c=0;c<21;c++){let cell=document.createElement("div"),dark=rnd()>.52,f=(r<7&&c<7)||(r<7&&c>13)||(r>13&&c<7);if(f){let rr=r<7?r:r-14,cc=c<7?c:c-14;dark=rr===0||rr===6||cc===0||cc===6||(rr>=2&&rr<=4&&cc>=2&&cc<=4)}cell.className="qr-cell"+(dark?" dark":"");g.appendChild(cell)}})();render();
-refreshLiveOrdersIfAvailable();
+updateAuthUI().then(()=>refreshLiveOrdersIfAvailable());
 
 openWorkOrderFromEmailLink();

@@ -30,6 +30,28 @@
     if (error) throw error;
   }
 
+
+  async function getSession() {
+    const { data, error } = await client.auth.getSession();
+    if (error) throw error;
+    return data.session;
+  }
+
+  async function getProfile() {
+    const { data: { user }, error: userError } = await client.auth.getUser();
+    if (userError) throw userError;
+    if (!user) return null;
+
+    const { data, error } = await client
+      .from("profiles")
+      .select("id,full_name,email,organization,department,role,active")
+      .eq("id", user.id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  }
+
   async function getWorkOrders(filters = {}) {
     let q = client
       .from("work_orders")
@@ -90,6 +112,8 @@
     submitWorkOrder,
     signIn,
     signOut,
+    getSession,
+    getProfile,
     getWorkOrders,
     getWorkOrderByNumber,
     getWorkOrderByToken,

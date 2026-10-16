@@ -30,8 +30,8 @@
         <h1>Electrical Service Portal</h1>
       </div>
       <button class="user-card" id="loginBtn">
-        <span class="avatar">CC</span>
-        <span><strong>City Demo User</strong><small>Facilities / Procurement Review</small></span>
+        <span class="avatar" id="userAvatar">SE</span>
+        <span><strong id="userName">Sams Electric Staff</strong><small id="userRole">Sign in for live dispatch dashboard</small></span>
       </button>
     </header>
 
@@ -134,8 +134,8 @@
 
       <section class="panel" id="orders">
         <div class="panel-head">
-          <div><p class="eyebrow">Municipal Work Order Dashboard</p><h3>Work Orders</h3></div>
-          <button class="btn quiet" id="resetDemo">Reset Demo Data</button>
+          <div><p class="eyebrow">Municipal Work Order Dashboard</p><h3>Work Orders <span id="dashboardMode" class="tag">Demo / Local</span></h3></div>
+          <div class="actions compact-actions"><button class="btn quiet" id="refreshDashboard">Refresh</button><button class="btn quiet" id="resetDemo">Reset Demo Data</button></div>
         </div>
         <div class="toolbar"><input id="searchInput" placeholder="Search work order, facility, department, issue..."><select id="statusFilter"><option value="all">All statuses</option><option>Submitted</option><option>Acknowledged</option><option>Scheduled</option><option>Technician En Route</option><option>In Progress</option><option>Completed</option></select></div>
         <div class="table-wrap">
@@ -176,12 +176,25 @@
 <div id="loginModal" class="modal hidden">
   <div class="modal-card login">
     <img src="assets/sams-electric-logo.jpg" alt="Sams Electric">
-    <p class="eyebrow">Columbus Municipal Service Portal</p><h3>Demo User Access</h3>
-    <p class="muted-copy">This simulated login shows how authorized City personnel could access a production portal.</p>
-    <label>Email<input value="demo.user@columbusga.org" readonly></label>
-    <label>Password<input type="password" value="demopassword" readonly></label>
-    <button class="btn primary full-btn" id="enterDemo">Enter Demonstration</button>
-    <button class="btn quiet full-btn" id="closeLogin">Cancel</button>
+    <p class="eyebrow">Authorized Staff Access</p>
+    <h3 id="loginTitle">Sams Electric Staff Login</h3>
+    <p class="muted-copy" id="loginCopy">Sign in to load live Columbus work orders from the Sams Electric database.</p>
+    <div id="loginFields">
+      <label>Email<input id="staffEmail" type="email" autocomplete="username" placeholder="office@sams-electric.com"></label>
+      <label>Password<input id="staffPassword" type="password" autocomplete="current-password" placeholder="Password"></label>
+      <div id="loginMessage" class="auth-message hidden"></div>
+      <button class="btn primary full-btn" id="staffSignIn">Sign In</button>
+    </div>
+    <div id="signedInPanel" class="hidden">
+      <div class="signed-in-card">
+        <strong id="signedInName">Sams Electric Staff</strong>
+        <small id="signedInEmail"></small>
+        <span id="signedInRole" class="tag"></span>
+      </div>
+      <button class="btn dark full-btn" id="refreshLiveDashboard">Refresh Live Dashboard</button>
+      <button class="btn quiet full-btn" id="staffSignOut">Sign Out</button>
+    </div>
+    <button class="btn quiet full-btn" id="closeLogin">Close</button>
   </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
