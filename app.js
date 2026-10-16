@@ -1,4 +1,69 @@
 
+async function openWorkOrderFromEmailLink() {
+  const params = new URLSearchParams(window.location.search);
+  const workOrderNumber = params.get("workOrder");
+  const token = params.get("token");
+
+  if (!workOrderNumber || !token || !window.SamsPortalAPI) return;
+
+  try {
+    const result = await window.SamsPortalAPI.getWorkOrderByToken(workOrderNumber, token);
+    const o = result.work_order;
+    if (!o) return;
+
+    document.getElementById("modalTitle").textContent = o.work_order_number;
+
+    const timeline = (o.work_order_events || []).map(evt => `
+      <div class="timeline-step">
+        <span class="dot"></span>
+        <div>
+          <strong>${esc(evt.to_status || evt.event_type || "Update")}</strong>
+          ${evt.message ? `<div style="margin-top:3px;color:#667085">${esc(evt.message)}</div>` : ""}
+          ${evt.created_at ? `<small style="color:#667085">${new Date(evt.created_at).toLocaleString()}</small>` : ""}
+        </div>
+      </div>
+    `).join("");
+
+    document.getElementById("modalBody").innerHTML = `
+      <div class="detail-grid">
+        <div class="detail-card"><small>City WO / PO</small><strong>${esc(o.city_work_order_number || o.city_po_number || "—")}</strong></div>
+        <div class="detail-card"><small>Status</small><strong>${esc(o.status)}</strong></div>
+        <div class="detail-card"><small>Department</small><strong>${esc(o.department)}</strong></div>
+        <div class="detail-card"><small>Facility</small><strong>${esc(o.facility_name)}</strong></div>
+        <div class="detail-card"><small>Priority</small><strong>${esc(o.priority)}</strong></div>
+        <div class="detail-card"><small>Assigned Crew</small><strong>${esc(o.assigned_crew || "Unassigned")}</strong></div>
+        <div class="detail-card"><small>Assigned Technician</small><strong>${esc(o.assigned_technician || "Unassigned")}</strong></div>
+        <div class="detail-card"><small>Submitted</small><strong>${o.submitted_at ? new Date(o.submitted_at).toLocaleString() : "—"}</strong></div>
+      </div>
+
+      <div class="detail-card" style="margin-top:12px"><small>Category</small><strong>${esc(o.category)}</strong></div>
+      <div class="detail-card" style="margin-top:12px"><small>Description</small><div>${esc(o.description)}</div></div>
+      <div class="detail-card" style="margin-top:12px"><small>Access Instructions</small><div>${esc(o.access_instructions || "—")}</div></div>
+
+      <div class="detail-grid">
+        <div class="detail-card"><small>Power Out?</small><strong>${esc(o.power_out || "No")}</strong></div>
+        <div class="detail-card"><small>Life-Safety Concern?</small><strong>${o.life_safety ? "Yes" : "No"}</strong></div>
+      </div>
+
+      <div class="timeline">
+        <h3>Service Timeline</h3>
+        ${timeline || `<div class="timeline-step"><span class="dot"></span><div><strong>Submitted</strong></div></div>`}
+      </div>
+    `;
+
+    document.getElementById("modal").classList.remove("hidden");
+
+    // Scroll the page to the work-order dashboard behind the modal for context.
+    const orders = document.getElementById("orders") || document.getElementById("dashboard-section");
+    if (orders) orders.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  } catch (err) {
+    console.error("Unable to open emailed work order:", err);
+    alert("This work-order link is invalid or could not be loaded.");
+  }
+}
+
+
 async function refreshLiveOrdersIfAvailable() {
   try {
     if (!window.SamsPortalAPI) return;
@@ -145,3 +210,5 @@ document.querySelectorAll("[data-scroll]").forEach(b=>b.onclick=()=>{document.qu
 loginBtn.onclick=()=>loginModal.classList.remove("hidden");closeLogin.onclick=enterDemo.onclick=()=>loginModal.classList.add("hidden");loginModal.onclick=e=>{if(e.target.id==="loginModal")loginModal.classList.add("hidden")};
 (function(){let seed=17,g=qrGrid;function rnd(){seed=(seed*9301+49297)%233280;return seed/233280}for(let r=0;r<21;r++)for(let c=0;c<21;c++){let cell=document.createElement("div"),dark=rnd()>.52,f=(r<7&&c<7)||(r<7&&c>13)||(r>13&&c<7);if(f){let rr=r<7?r:r-14,cc=c<7?c:c-14;dark=rr===0||rr===6||cc===0||cc===6||(rr>=2&&rr<=4&&cc>=2&&cc<=4)}cell.className="qr-cell"+(dark?" dark":"");g.appendChild(cell)}})();render();
 refreshLiveOrdersIfAvailable();
+
+openWorkOrderFromEmailLink();

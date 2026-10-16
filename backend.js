@@ -64,6 +64,16 @@
     return data;
   }
 
+
+  async function getWorkOrderByToken(workOrderNumber, token) {
+    const { data, error } = await client.functions.invoke(
+      "get-work-order-by-token",
+      { body: { work_order_number: workOrderNumber, token } }
+    );
+    if (error) throw error;
+    return data;
+  }
+
   async function getFacilityByCode(code) {
     const { data, error } = await client
       .from("facilities")
@@ -82,6 +92,7 @@
     signOut,
     getWorkOrders,
     getWorkOrderByNumber,
+    getWorkOrderByToken,
     updateWorkOrder,
     getFacilityByCode,
   };
