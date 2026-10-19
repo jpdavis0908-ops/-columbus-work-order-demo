@@ -129,6 +129,16 @@
     return data;
   }
 
+
+  async function getCityWorkOrders() {
+    const { data, error } = await client.functions.invoke("city-work-orders", { body: {} });
+    if (error) throw error; if (data?.error) throw new Error(data.error); return data;
+  }
+  async function getCityWorkOrderDetail(workOrderNumber) {
+    const { data, error } = await client.functions.invoke("city-work-order-detail", { body: { work_order_number: workOrderNumber } });
+    if (error) throw error; if (data?.error) throw new Error(data.error); return data;
+  }
+
   async function getFacilityByCode(code) {
     const { data, error } = await client
       .from("facilities")
@@ -154,6 +164,8 @@
     createPhotoUpload,
     uploadPhotoToSignedUrl,
     listWorkOrderPhotos,
+    getCityWorkOrders,
+    getCityWorkOrderDetail,
     getFacilityByCode,
   };
 })();

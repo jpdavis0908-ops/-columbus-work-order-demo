@@ -29,6 +29,7 @@
         <small>Columbus Consolidated Government</small>
         <h1>Electrical Service Portal</h1>
       </div>
+      <button class="user-card city-access-card" id="cityAccessBtn"><span class="avatar">CC</span><span><strong>City Tracking</strong><small>Authorized Columbus users</small></span></button>
       <button class="user-card" id="loginBtn">
         <span class="avatar" id="userAvatar">SE</span>
         <span><strong id="userName">Sams Electric Staff</strong><small id="userRole">Sign in for live dispatch dashboard</small></span>
@@ -224,6 +225,8 @@ window.addEventListener("load", async () => {
 </script>
 
 
+
+<section id="cityTrackingSection" class="panel city-tracking-panel hidden"><div class="section-head"><div><p class="eyebrow">Columbus Consolidated Government</p><h3>City Work Order Tracking</h3><p id="cityTrackingIdentity" class="muted-copy"></p></div><div class="actions compact-actions"><button type="button" class="btn quiet" id="refreshCityTracking">Refresh</button><button type="button" class="btn quiet" id="citySignOut">Sign Out</button></div></div><div class="city-status-cards"><div class="stat-card"><small>Open</small><strong id="cityOpenCount">0</strong></div><div class="stat-card"><small>Scheduled</small><strong id="cityScheduledCount">0</strong></div><div class="stat-card"><small>In Progress</small><strong id="cityProgressCount">0</strong></div><div class="stat-card"><small>Completed</small><strong id="cityCompletedCount">0</strong></div></div><div class="table-wrap"><table class="work-order-table city-work-order-table"><thead><tr><th>Work Order</th><th>Facility</th><th>Issue</th><th>Priority</th><th>Status</th><th>Scheduled</th><th>Updated</th><th></th></tr></thead><tbody id="cityWorkOrderTable"></tbody></table></div></section>
 <div id="dispatchModal" class="modal hidden">
   <div class="modal-card dispatch-modal-card">
     <div class="modal-head">
@@ -397,6 +400,10 @@ document.addEventListener("click", function(e) {
     </div>
   </div>
 </div>
+
+
+<div id="cityLoginModal" class="modal hidden"><div class="modal-card login"><img src="assets/sams-electric-logo.jpg" alt="Sams Electric"><p class="eyebrow">Columbus Consolidated Government</p><h3>City Work Order Tracking</h3><p class="muted-copy">Authorized City requestors and supervisors can track submitted work orders and City-visible updates.</p><label>Email<input id="cityEmail" type="email" autocomplete="username" placeholder="name@columbusga.org"></label><label>Password<input id="cityPassword" type="password" autocomplete="current-password" placeholder="Password"></label><div id="cityLoginMessage" class="auth-message hidden"></div><button type="button" class="btn primary full-btn" id="citySignIn">Sign In</button><button type="button" class="btn quiet full-btn" onclick="document.getElementById('cityLoginModal').classList.add('hidden');return false;">Cancel</button></div></div>
+<div id="cityDetailModal" class="modal hidden"><div class="modal-card city-detail-card"><div class="modal-head"><div><p class="eyebrow">City Work Order</p><h3 id="cityDetailTitle">Work Order</h3></div><button type="button" class="icon-btn" onclick="document.getElementById('cityDetailModal').classList.add('hidden');return false;">×</button></div><div id="cityDetailBody"></div></div></div>
 
 </body>
 </html>
