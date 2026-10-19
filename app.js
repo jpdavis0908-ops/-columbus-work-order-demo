@@ -433,7 +433,7 @@ async function openDispatchControls(orderNumber) {
 
     renderDispatchHistory(order);
     setDispatchMessage("");
-    document.getElementById("dispatchModal").classList.remove("hidden");
+    document.getElementById("dispatchModal").style.display = ""; document.getElementById("dispatchModal").classList.remove("hidden");
   } catch (err) {
     console.error("Dispatch load:", err);
     alert(err.message || "Unable to load dispatch controls.");
