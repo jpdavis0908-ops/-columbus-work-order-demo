@@ -139,3 +139,143 @@ footer{display:flex;justify-content:space-between;gap:14px;background:var(--navy
   .city-tracking-panel .section-head{align-items:flex-start}
   .city-tracking-panel .section-head .actions{width:100%;display:grid;grid-template-columns:1fr 1fr}
 }
+
+
+/* City tracking: force narrow, readable card layout everywhere */
+#cityTrackingSection{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  overflow:hidden;
+  box-sizing:border-box;
+}
+#cityTrackingSection *{
+  box-sizing:border-box;
+  min-width:0;
+}
+.city-tracking-panel{
+  width:100%;
+  max-width:100%;
+  overflow:hidden;
+}
+.city-work-order-cards{
+  display:grid !important;
+  grid-template-columns:1fr !important;
+  gap:14px;
+  width:100%;
+  max-width:100%;
+}
+.city-order-card{
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  border:1px solid #e4e7ec;
+  border-radius:14px;
+  padding:14px;
+  background:#fff;
+  box-shadow:0 1px 2px rgba(16,24,40,.05);
+  overflow:hidden;
+}
+.city-order-card-head{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:8px;
+  margin-bottom:12px;
+}
+.city-order-title{
+  width:100%;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.city-order-title strong,.city-order-title small{
+  display:block;
+  max-width:100%;
+  overflow-wrap:anywhere;
+}
+.city-order-title small{
+  margin-top:3px;
+  color:#667085;
+}
+.city-card-row{
+  display:grid;
+  grid-template-columns:92px minmax(0,1fr);
+  gap:10px;
+  align-items:start;
+  padding:9px 0;
+  border-bottom:1px solid #eef2f6;
+}
+.city-card-row span{
+  color:#667085;
+  font-size:13px;
+}
+.city-card-row strong{
+  display:block;
+  max-width:100%;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.city-view-btn{
+  margin-top:14px;
+  width:100%;
+}
+.city-status-cards{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  width:100%;
+}
+.city-status-cards .stat-card{
+  min-width:0;
+  overflow:hidden;
+}
+.city-tracking-panel .section-head{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  gap:12px;
+}
+.city-tracking-panel .section-head .actions{
+  width:100%;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.city-detail-card{
+  width:calc(100vw - 24px) !important;
+  max-width:760px !important;
+  min-width:0 !important;
+  max-height:92vh !important;
+  overflow:auto !important;
+  margin:12px !important;
+  padding:16px !important;
+}
+#cityDetailBody,#cityDetailBody *{
+  max-width:100%;
+  min-width:0;
+  box-sizing:border-box;
+  overflow-wrap:anywhere;
+  word-break:break-word;
+}
+.city-detail-grid{
+  grid-template-columns:1fr !important;
+}
+.city-photo-grid{
+  grid-template-columns:1fr !important;
+}
+.city-photo-grid img{
+  width:100%;
+  height:auto;
+  max-height:320px;
+  object-fit:cover;
+}
+@media(min-width:900px){
+  .city-work-order-cards{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+  .city-order-card-head{
+    flex-direction:row;
+    justify-content:space-between;
+  }
+  .city-detail-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+  }
+}

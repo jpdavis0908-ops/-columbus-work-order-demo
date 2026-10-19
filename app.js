@@ -821,45 +821,55 @@ function cityEsc(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<"
 function cityDate(v){if(!v)return"—";const d=new Date(v);return Number.isNaN(d.getTime())?"—":d.toLocaleString();}
 function setCityLoginMessage(m,k=""){const e=document.getElementById("cityLoginMessage");if(!e)return;e.textContent=m||"";e.className="auth-message"+(k?" "+k:"")+(!m?" hidden":"");}
 function renderCityTracking(){
-  const t=document.getElementById("cityWorkOrderTable"),cards=document.getElementById("cityWorkOrderCards"),o=cityTrackingOrders||[];
-  if(!t)return;
+  const cards=document.getElementById("cityWorkOrderCards"),o=cityTrackingOrders||[];
+  if(!cards)return;
+
   document.getElementById("cityOpenCount").textContent=o.filter(x=>!["Completed","Cancelled"].includes(x.status)).length;
   document.getElementById("cityScheduledCount").textContent=o.filter(x=>x.status==="Scheduled").length;
   document.getElementById("cityProgressCount").textContent=o.filter(x=>["Technician En Route","In Progress","Waiting on City"].includes(x.status)).length;
   document.getElementById("cityCompletedCount").textContent=o.filter(x=>x.status==="Completed").length;
 
   if(!o.length){
-    t.innerHTML='<tr><td colspan="8" class="city-empty">No City work orders are available for this account.</td></tr>';
-    if(cards)cards.innerHTML='<div class="city-empty">No City work orders are available for this account.</div>';
+    cards.innerHTML='<div class="city-empty">No City work orders are available for this account.</div>';
     return;
   }
 
-  t.innerHTML=o.map(x=>`<tr>
-    <td><strong>${cityEsc(x.work_order_number)}</strong>${x.city_work_order_number?`<br><small>City WO: ${cityEsc(x.city_work_order_number)}</small>`:""}</td>
-    <td>${cityEsc(x.facility_name||"—")}</td>
-    <td>${cityEsc(x.category||"Electrical")}</td>
-    <td><span class="priority ${(x.priority||"Routine").toLowerCase()}">${cityEsc(x.priority||"Routine")}</span></td>
-    <td><span class="status ${x.status==="Completed"?"completed":""}">${cityEsc(x.status||"Submitted")}</span></td>
-    <td>${cityDate(x.scheduled_for)}</td>
-    <td>${cityDate(x.updated_at)}</td>
-    <td><button type="button" class="btn quiet" data-city-detail="${cityEsc(x.work_order_number)}">View</button></td>
-  </tr>`).join("");
+  cards.innerHTML=o.map(x=>`<article class="city-order-card">
+    <div class="city-order-card-head">
+      <div class="city-order-title">
+        <strong>${cityEsc(x.work_order_number)}</strong>
+        ${x.city_work_order_number?`<small>City WO: ${cityEsc(x.city_work_order_number)}</small>`:""}
+      </div>
+      <span class="status ${x.status==="Completed"?"completed":""}">${cityEsc(x.status||"Submitted")}</span>
+    </div>
 
-  if(cards){
-    cards.innerHTML=o.map(x=>`<article class="city-order-card">
-      <div class="city-order-card-head">
-        <div><strong>${cityEsc(x.work_order_number)}</strong>${x.city_work_order_number?`<small>City WO: ${cityEsc(x.city_work_order_number)}</small>`:""}</div>
-        <span class="status ${x.status==="Completed"?"completed":""}">${cityEsc(x.status||"Submitted")}</span>
-      </div>
-      <div class="city-order-card-grid">
-        <div><small>Facility</small><strong>${cityEsc(x.facility_name||"—")}</strong></div>
-        <div><small>Issue</small><strong>${cityEsc(x.category||"Electrical")}</strong></div>
-        <div><small>Priority</small><span class="priority ${(x.priority||"Routine").toLowerCase()}">${cityEsc(x.priority||"Routine")}</span></div>
-        <div><small>Scheduled</small><strong>${cityDate(x.scheduled_for)}</strong></div>
-      </div>
-      <button type="button" class="btn primary full-btn" data-city-detail="${cityEsc(x.work_order_number)}">View Work Order</button>
-    </article>`).join("");
-  }
+    <div class="city-card-row">
+      <span>Facility</span>
+      <strong>${cityEsc(x.facility_name||"—")}</strong>
+    </div>
+
+    <div class="city-card-row">
+      <span>Issue</span>
+      <strong>${cityEsc(x.category||"Electrical")}</strong>
+    </div>
+
+    <div class="city-card-row">
+      <span>Priority</span>
+      <strong>${cityEsc(x.priority||"Routine")}</strong>
+    </div>
+
+    <div class="city-card-row">
+      <span>Scheduled</span>
+      <strong>${cityDate(x.scheduled_for)}</strong>
+    </div>
+
+    <div class="city-card-row">
+      <span>Updated</span>
+      <strong>${cityDate(x.updated_at)}</strong>
+    </div>
+
+    <button type="button" class="btn primary full-btn city-view-btn" data-city-detail="${cityEsc(x.work_order_number)}">View Work Order</button>
+  </article>`).join("");
 }
 async function loadCityTracking(){const r=await window.SamsPortalAPI.getCityWorkOrders();cityTrackingProfile=r.profile;cityTrackingOrders=r.work_orders||[];document.getElementById("cityTrackingIdentity").textContent=`${cityTrackingProfile.full_name||cityTrackingProfile.email} · ${cityTrackingProfile.role==="city_supervisor"?(cityTrackingProfile.department||"Department")+" Supervisor":"City Requestor"}`;document.getElementById("cityTrackingSection").classList.remove("hidden");renderCityTracking();}
 async function citySignIn(){const email=document.getElementById("cityEmail").value.trim(),pw=document.getElementById("cityPassword").value,b=document.getElementById("citySignIn");if(!email||!pw){setCityLoginMessage("Enter your City email and password.","error");return;}b.disabled=true;b.textContent="Signing In...";try{const r=await window.SamsPortalAPI.signIn(email,pw);if(!r?.session)throw new Error("Unable to create a City session.");await loadCityTracking();document.getElementById("cityLoginModal").classList.add("hidden");document.getElementById("cityTrackingSection").scrollIntoView({behavior:"smooth"});}catch(e){await window.SamsPortalAPI.signOut().catch(()=>{});setCityLoginMessage(e.message||"City sign in failed.","error");}finally{b.disabled=false;b.textContent="Sign In";}}
