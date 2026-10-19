@@ -479,17 +479,41 @@ async function saveDispatchUpdate() {
   }
 }
 
+
 const dispatchModal = document.getElementById("dispatchModal");
-const closeDispatch = document.getElementById("closeDispatch");
-const cancelDispatch = document.getElementById("cancelDispatch");
 const saveDispatch = document.getElementById("saveDispatch");
 
-if (closeDispatch) closeDispatch.onclick = () => dispatchModal.classList.add("hidden");
-if (cancelDispatch) cancelDispatch.onclick = () => dispatchModal.classList.add("hidden");
-if (saveDispatch) saveDispatch.onclick = saveDispatchUpdate;
-if (dispatchModal) dispatchModal.onclick = e => {
-  if (e.target.id === "dispatchModal") dispatchModal.classList.add("hidden");
-};
+function closeDispatchModal() {
+  const modal = document.getElementById("dispatchModal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  activeDispatchWorkOrder = null;
+  setDispatchMessage("");
+}
+
+if (saveDispatch) saveDispatch.addEventListener("click", saveDispatchUpdate);
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest("#closeDispatch") || e.target.closest("#cancelDispatch")) {
+    e.preventDefault();
+    e.stopPropagation();
+    closeDispatchModal();
+    return;
+  }
+
+  const modal = document.getElementById("dispatchModal");
+  if (modal && e.target === modal) {
+    closeDispatchModal();
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("dispatchModal");
+    if (modal && !modal.classList.contains("hidden")) closeDispatchModal();
+  }
+});
+
 
 document.addEventListener("click", async e => {
   const btn = e.target.closest("[data-dispatch-order]");
