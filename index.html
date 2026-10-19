@@ -358,6 +358,31 @@ document.addEventListener("click", function(e) {
       <textarea id="fieldCompletion" rows="4" placeholder="Required when marking the work order Completed."></textarea>
     </label>
 
+
+    <div class="field-photo-section">
+      <h4>Work Order Photos</h4>
+
+      <div class="photo-type-row">
+        <label>Photo Type
+          <select id="fieldPhotoType">
+            <option value="Before">Before</option>
+            <option value="After">After</option>
+            <option value="Other">Other</option>
+          </select>
+        </label>
+      </div>
+
+      <label class="photo-upload-label">
+        <span class="btn dark full-btn">Take / Upload Photo</span>
+        <input id="fieldPhotoInput" type="file" accept="image/jpeg,image/png,image/webp" capture="environment">
+      </label>
+
+      <div id="photoUploadMessage" class="auth-message hidden"></div>
+      <div id="fieldPhotoGallery" class="field-photo-gallery">
+        <div class="muted-copy">No photos loaded.</div>
+      </div>
+    </div>
+
     <div id="fieldMessage" class="auth-message hidden"></div>
 
     <div class="field-save-actions">

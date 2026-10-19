@@ -609,6 +609,8 @@ async function openFieldWorkflow(orderNumber) {
     const modal = document.getElementById("fieldModal");
     modal.style.display = "";
     modal.classList.remove("hidden");
+    setPhotoMessage("");
+    await loadFieldPhotos();
   } catch (err) {
     console.error("Field workflow load:", err);
     alert(err.message || "Unable to load technician workflow.");
@@ -718,6 +720,97 @@ document.addEventListener("click", async (e) => {
     e.preventDefault();
     e.stopPropagation();
     await saveFieldWorkflow();
+  }
+});
+
+
+
+function setPhotoMessage(message, kind="") {
+  const el = document.getElementById("photoUploadMessage");
+  if (!el) return;
+  el.textContent = message || "";
+  el.className = "auth-message" + (kind ? " " + kind : "") + (!message ? " hidden" : "");
+}
+
+async function loadFieldPhotos() {
+  const gallery = document.getElementById("fieldPhotoGallery");
+  if (!gallery || !activeFieldWorkOrder) return;
+
+  gallery.innerHTML = '<div class="muted-copy">Loading photos...</div>';
+
+  try {
+    const result = await window.SamsPortalAPI.listWorkOrderPhotos(activeFieldWorkOrder.work_order_number);
+    const photos = result.photos || [];
+
+    if (!photos.length) {
+      gallery.innerHTML = '<div class="muted-copy">No photos uploaded yet.</div>';
+      return;
+    }
+
+    gallery.innerHTML = photos.map(photo => `
+      <a class="photo-card" href="${photo.signed_url || "#"}" target="_blank" rel="noopener">
+        ${photo.signed_url ? `<img src="${photo.signed_url}" alt="${dispatchEsc(photo.file_name || "Work order photo")}">` : ""}
+        <div class="photo-card-body">
+          <span class="photo-type-badge">${dispatchEsc(photo.photo_type || "Other")}</span>
+          <strong>${dispatchEsc(photo.file_name || "Photo")}</strong>
+          <small>${photo.uploaded_by_name ? dispatchEsc(photo.uploaded_by_name) + " · " : ""}${photo.uploaded_at ? new Date(photo.uploaded_at).toLocaleString() : ""}</small>
+        </div>
+      </a>
+    `).join("");
+  } catch (err) {
+    console.error("Load photos:", err);
+    gallery.innerHTML = '<div class="muted-copy">Unable to load photos.</div>';
+  }
+}
+
+async function handleFieldPhotoUpload(file) {
+  if (!file || !activeFieldWorkOrder) return;
+
+  const allowed = ["image/jpeg","image/png","image/webp"];
+  if (!allowed.includes(file.type)) {
+    setPhotoMessage("Please select a JPG, PNG, or WebP image.", "error");
+    return;
+  }
+
+  if (file.size > 15 * 1024 * 1024) {
+    setPhotoMessage("Photo must be 15 MB or smaller.", "error");
+    return;
+  }
+
+  const type = document.getElementById("fieldPhotoType").value || "Other";
+  setPhotoMessage(`Preparing ${type.toLowerCase()} photo...`, "success");
+
+  try {
+    const prepared = await window.SamsPortalAPI.createPhotoUpload({
+      work_order_number: activeFieldWorkOrder.work_order_number,
+      file_name: file.name || "photo.jpg",
+      mime_type: file.type,
+      file_size: file.size,
+      photo_type: type
+    });
+
+    setPhotoMessage("Uploading photo...", "success");
+
+    await window.SamsPortalAPI.uploadPhotoToSignedUrl(
+      prepared.path,
+      prepared.token,
+      file
+    );
+
+    setPhotoMessage(`${type} photo uploaded successfully.`, "success");
+    document.getElementById("fieldPhotoInput").value = "";
+    await loadFieldPhotos();
+    await refreshLiveOrdersIfAvailable();
+  } catch (err) {
+    console.error("Photo upload:", err);
+    setPhotoMessage(err.message || "Photo upload failed.", "error");
+  }
+}
+
+document.addEventListener("change", async (e) => {
+  if (e.target && e.target.id === "fieldPhotoInput") {
+    const file = e.target.files && e.target.files[0];
+    if (file) await handleFieldPhotoUpload(file);
   }
 });
 

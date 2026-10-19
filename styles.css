@@ -85,3 +85,22 @@ footer{display:flex;justify-content:space-between;gap:14px;background:var(--navy
   font-weight:700;
   box-shadow:0 0 0 3px rgba(245,197,66,.18);
 }
+
+
+/* Work-order photo uploads */
+.field-photo-section{border-top:1px solid #e4e7ec;margin-top:18px;padding-top:16px}
+.field-photo-section h4{margin:0 0 10px}
+.photo-type-row{max-width:240px}
+.photo-upload-label{display:block;cursor:pointer;margin:10px 0 14px}
+.photo-upload-label input[type=file]{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+.field-photo-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}
+.photo-card{border:1px solid #e4e7ec;border-radius:10px;overflow:hidden;background:#fff}
+.photo-card img{display:block;width:100%;height:130px;object-fit:cover;background:#f2f4f7}
+.photo-card-body{padding:8px}
+.photo-card-body strong,.photo-card-body small{display:block}
+.photo-card-body small{color:#667085;margin-top:3px}
+.photo-type-badge{display:inline-block;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:#fff4d6;color:#7a5200;margin-bottom:4px}
+@media(max-width:700px){
+  .field-photo-gallery{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .photo-card img{height:150px}
+}

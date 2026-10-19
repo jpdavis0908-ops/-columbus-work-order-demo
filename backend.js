@@ -97,6 +97,38 @@
     return data;
   }
 
+
+  async function createPhotoUpload(payload) {
+    const { data, error } = await client.functions.invoke(
+      "create-photo-upload",
+      { body: payload }
+    );
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+
+  async function uploadPhotoToSignedUrl(path, token, file) {
+    const { data, error } = await client.storage
+      .from("work-order-files")
+      .uploadToSignedUrl(path, token, file, {
+        contentType: file.type,
+        upsert: false
+      });
+    if (error) throw error;
+    return data;
+  }
+
+  async function listWorkOrderPhotos(workOrderNumber) {
+    const { data, error } = await client.functions.invoke(
+      "list-work-order-photos",
+      { body: { work_order_number: workOrderNumber } }
+    );
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+    return data;
+  }
+
   async function getFacilityByCode(code) {
     const { data, error } = await client
       .from("facilities")
@@ -119,6 +151,9 @@
     getWorkOrderByNumber,
     getWorkOrderByToken,
     updateWorkOrder,
+    createPhotoUpload,
+    uploadPhotoToSignedUrl,
+    listWorkOrderPhotos,
     getFacilityByCode,
   };
 })();
