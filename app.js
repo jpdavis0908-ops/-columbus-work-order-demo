@@ -481,8 +481,6 @@ async function saveDispatchUpdate() {
 
 
 const dispatchModal = document.getElementById("dispatchModal");
-const saveDispatch = document.getElementById("saveDispatch");
-
 function closeDispatchModal() {
   const modal = document.getElementById("dispatchModal");
   if (!modal) return;
@@ -490,8 +488,6 @@ function closeDispatchModal() {
   activeDispatchWorkOrder = null;
   setDispatchMessage("");
 }
-
-if (saveDispatch) saveDispatch.addEventListener("click", saveDispatchUpdate);
 
 document.addEventListener("click", (e) => {
   if (e.target.closest("#closeDispatch") || e.target.closest("#cancelDispatch")) {
@@ -679,9 +675,6 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-const saveFieldUpdate = document.getElementById("saveFieldUpdate");
-if (saveFieldUpdate) saveFieldUpdate.addEventListener("click", saveFieldWorkflow);
-
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     const modal = document.getElementById("fieldModal");
@@ -691,6 +684,26 @@ document.addEventListener("keydown", (e) => {
       activeFieldWorkOrder = null;
       pendingFieldStatus = null;
     }
+  }
+});
+
+
+
+// Save buttons are rendered after app.js loads, so bind through document delegation.
+document.addEventListener("click", async (e) => {
+  const dispatchSave = e.target.closest && e.target.closest("#saveDispatch");
+  if (dispatchSave) {
+    e.preventDefault();
+    e.stopPropagation();
+    await saveDispatchUpdate();
+    return;
+  }
+
+  const fieldSave = e.target.closest && e.target.closest("#saveFieldUpdate");
+  if (fieldSave) {
+    e.preventDefault();
+    e.stopPropagation();
+    await saveFieldWorkflow();
   }
 });
 
