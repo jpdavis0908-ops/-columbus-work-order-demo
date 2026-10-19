@@ -309,5 +309,69 @@ document.addEventListener("click", function(e) {
 });
 </script>
 
+
+<div id="fieldModal" class="modal hidden">
+  <div class="modal-card field-modal-card">
+    <div class="modal-head">
+      <div>
+        <p class="eyebrow">Sams Electric Field Service</p>
+        <h3 id="fieldTitle">Technician Work Order</h3>
+      </div>
+      <button type="button" class="icon-btn" id="closeField"
+        onclick="var m=document.getElementById('fieldModal');m.classList.add('hidden');m.style.display='none';return false;">×</button>
+    </div>
+
+    <div id="fieldSummary" class="field-summary"></div>
+
+    <div class="field-contact-grid">
+      <a id="fieldMapsLink" class="btn dark full-btn" href="#" target="_blank" rel="noopener">Open Address in Maps</a>
+      <a id="fieldPhoneLink" class="btn quiet full-btn" href="#">Call Requestor</a>
+    </div>
+
+    <div class="field-status-actions">
+      <button type="button" class="btn status-action" data-field-status="Technician En Route">En Route</button>
+      <button type="button" class="btn status-action" data-field-status="In Progress">Start Work</button>
+      <button type="button" class="btn primary status-action" data-field-status="Completed">Complete</button>
+    </div>
+
+    <div class="field-current-status">
+      Current Status: <strong id="fieldCurrentStatus">—</strong>
+    </div>
+
+    <label>Labor Hours
+      <input id="fieldLaborHours" type="number" min="0" step="0.25" inputmode="decimal" placeholder="0.00">
+    </label>
+
+    <label>Materials Used
+      <textarea id="fieldMaterials" rows="4" placeholder="Example: 2 LED fixtures, 20A breaker, 25 ft #12 THHN"></textarea>
+    </label>
+
+    <label>Field Notes <span class="field-private-label">Sams Electric internal</span>
+      <textarea id="fieldNotes" rows="4" placeholder="Troubleshooting findings, access issues, work performed, etc."></textarea>
+    </label>
+
+    <label>City-Visible Update
+      <textarea id="fieldCityUpdate" rows="3" placeholder="Optional update for the City, such as awaiting a part or work completed."></textarea>
+    </label>
+
+    <label>Completion Summary
+      <textarea id="fieldCompletion" rows="4" placeholder="Required when marking the work order Completed."></textarea>
+    </label>
+
+    <div id="fieldMessage" class="auth-message hidden"></div>
+
+    <div class="field-save-actions">
+      <button type="button" class="btn primary full-btn" id="saveFieldUpdate">Save Field Update</button>
+      <button type="button" class="btn quiet full-btn" id="cancelField"
+        onclick="var m=document.getElementById('fieldModal');m.classList.add('hidden');m.style.display='none';return false;">Close</button>
+    </div>
+
+    <div class="field-history">
+      <h4>Job History</h4>
+      <div id="fieldHistory"></div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

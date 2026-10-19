@@ -114,10 +114,10 @@ function saveOrders(o){localStorage.setItem(key,JSON.stringify(o))}
 function render(){
  const orders=getOrders(),q=document.getElementById("searchInput").value.toLowerCase(),sf=document.getElementById("statusFilter").value;
  const filtered=orders.filter(o=>[o.id,o.cityWo,o.department,o.facility,o.category,o.description,o.priority,o.status,o.technician].join(" ").toLowerCase().includes(q)&&(sf==="all"||o.status===sf));
- document.getElementById("workOrderTable").innerHTML=filtered.map(o=>`<tr data-id="${esc(o.id)}"><td><b>${esc(o.id)}</b><br><small>${esc(o.cityWo||"")}</small></td><td>${esc(o.department)}</td><td>${esc(o.facility)}</td><td>${esc(o.category)}</td><td><span class="priority ${o.priority.toLowerCase()}">${esc(o.priority)}</span></td><td><span class="status ${o.status==="Completed"?"completed":""}">${esc(o.status)}</span></td><td>${esc(o.technician||"Unassigned")}</td><td>${esc(o.updated)}</td><td><button class="btn dark dispatch-btn" data-dispatch-order="${esc(o.id)}">Dispatch</button></td></tr>`).join("");
+ document.getElementById("workOrderTable").innerHTML=filtered.map(o=>`<tr data-id="${esc(o.id)}"><td><b>${esc(o.id)}</b><br><small>${esc(o.cityWo||"")}</small></td><td>${esc(o.department)}</td><td>${esc(o.facility)}</td><td>${esc(o.category)}</td><td><span class="priority ${o.priority.toLowerCase()}">${esc(o.priority)}</span></td><td><span class="status ${o.status==="Completed"?"completed":""}">${esc(o.status)}</span></td><td>${esc(o.technician||"Unassigned")}</td><td>${esc(o.updated)}</td><td><button class="btn dark dispatch-btn" data-dispatch-order="${esc(o.id)}">Dispatch</button><button class="btn quiet field-btn" data-field-order="${esc(o.id)}">Field</button></td></tr>`).join("");
  const open=orders.filter(o=>o.status!=="Completed").length, urgent=orders.filter(o=>["Priority","Emergency"].includes(o.priority)).length, completed=orders.filter(o=>o.status==="Completed").length;
  ["metricOpen","heroOpen"].forEach(id=>document.getElementById(id).textContent=open);document.getElementById("metricUrgent").textContent=urgent;["metricCompleted","heroCompleted"].forEach(id=>document.getElementById(id).textContent=completed);
- document.querySelectorAll("#workOrderTable tr").forEach(r=>r.onclick=(e)=>{if(e.target.closest("[data-dispatch-order]"))return;showDetail(r.dataset.id)});
+ document.querySelectorAll("#workOrderTable tr").forEach(r=>r.onclick=(e)=>{if(e.target.closest("[data-dispatch-order]")||e.target.closest("[data-field-order]"))return;showDetail(r.dataset.id)});
 }
 function showDetail(id){const o=getOrders().find(x=>x.id===id);if(!o)return;document.getElementById("modalTitle").textContent=o.id;document.getElementById("modalBody").innerHTML=`<div class="detail-grid"><div class="detail-card"><small>City WO / PO</small><b>${esc(o.cityWo||"—")}</b></div><div class="detail-card"><small>Status</small><b>${esc(o.status)}</b></div><div class="detail-card"><small>Department</small><b>${esc(o.department)}</b></div><div class="detail-card"><small>Facility</small><b>${esc(o.facility)}</b></div><div class="detail-card"><small>Priority</small><b>${esc(o.priority)}</b></div><div class="detail-card"><small>Assigned Technician</small><b>${esc(o.technician||"Unassigned")}</b></div><div class="detail-card"><small>Requested By</small><b>${esc(o.requester)}</b></div><div class="detail-card"><small>Updated</small><b>${esc(o.updated)}</b></div></div><div class="detail-card" style="margin-top:12px"><small>Issue</small><b>${esc(o.category)}</b></div><div class="detail-card" style="margin-top:12px"><small>Description</small>${esc(o.description)}</div><div class="detail-card" style="margin-top:12px"><small>Access Notes</small>${esc(o.accessNotes||"—")}</div><div class="timeline"><h3>Service Timeline</h3>${o.history.map(s=>`<div class="timeline-step"><span class="dot"></span><b>${esc(s)}</b></div>`).join("")}</div>`;document.getElementById("modal").classList.remove("hidden")}
 
@@ -520,5 +520,177 @@ document.addEventListener("click", async e => {
   if (!btn) return;
   e.preventDefault();
   await openDispatchControls(btn.dataset.dispatchOrder);
+});
+
+
+
+let activeFieldWorkOrder = null;
+let pendingFieldStatus = null;
+
+function setFieldMessage(message, kind="") {
+  const el = document.getElementById("fieldMessage");
+  if (!el) return;
+  el.textContent = message || "";
+  el.className = "auth-message" + (kind ? " " + kind : "") + (!message ? " hidden" : "");
+}
+
+function renderFieldHistory(order) {
+  const el = document.getElementById("fieldHistory");
+  if (!el) return;
+  const events = [...(order.work_order_events || [])]
+    .sort((a,b) => new Date(b.created_at) - new Date(a.created_at));
+
+  if (!events.length) {
+    el.innerHTML = '<div class="muted-copy">No job history yet.</div>';
+    return;
+  }
+
+  el.innerHTML = events.map(evt => `
+    <div class="field-history-item">
+      <strong>${dispatchEsc(evt.to_status || evt.event_type || "Update")}</strong>
+      ${evt.message ? `<div>${dispatchEsc(evt.message)}</div>` : ""}
+      <small>${evt.actor_name ? dispatchEsc(evt.actor_name) + " · " : ""}${evt.created_at ? new Date(evt.created_at).toLocaleString() : ""}</small>
+    </div>
+  `).join("");
+}
+
+async function openFieldWorkflow(orderNumber) {
+  try {
+    const session = await window.SamsPortalAPI.getSession();
+    if (!session) {
+      alert("Sign in as Sams Electric staff to use the technician workflow.");
+      return;
+    }
+
+    const order = await window.SamsPortalAPI.getWorkOrderByNumber(orderNumber);
+    if (!order) throw new Error("Work order could not be loaded.");
+
+    activeFieldWorkOrder = order;
+    pendingFieldStatus = order.status || "Submitted";
+
+    document.getElementById("fieldTitle").textContent = order.work_order_number;
+    document.getElementById("fieldSummary").innerHTML = `
+      <strong>${dispatchEsc(order.facility_name || "Facility")}</strong>
+      <div>${dispatchEsc(order.priority || "Routine")} · ${dispatchEsc(order.category || "Electrical")}</div>
+      <div class="field-address">${dispatchEsc(order.address || "")}</div>
+      <div style="margin-top:8px">${dispatchEsc(order.description || "")}</div>
+      ${order.access_instructions ? `<div style="margin-top:8px"><strong>Access:</strong> ${dispatchEsc(order.access_instructions)}</div>` : ""}
+      ${order.assigned_crew || order.assigned_technician ? `<div style="margin-top:8px"><strong>Assigned:</strong> ${dispatchEsc(order.assigned_crew || "")}${order.assigned_crew && order.assigned_technician ? " · " : ""}${dispatchEsc(order.assigned_technician || "")}</div>` : ""}
+    `;
+
+    const maps = document.getElementById("fieldMapsLink");
+    maps.href = order.address
+      ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.address)}`
+      : "#";
+    maps.style.opacity = order.address ? "1" : ".5";
+
+    const phone = document.getElementById("fieldPhoneLink");
+    phone.href = order.requester_phone ? `tel:${order.requester_phone.replace(/[^\d+]/g,"")}` : "#";
+    phone.textContent = order.requester_phone ? `Call ${order.requester_name || "Requestor"}` : "No Requestor Phone";
+    phone.style.opacity = order.requester_phone ? "1" : ".5";
+
+    document.getElementById("fieldCurrentStatus").textContent = pendingFieldStatus;
+    document.getElementById("fieldLaborHours").value = Number(order.labor_hours || 0).toFixed(2);
+    document.getElementById("fieldMaterials").value = order.materials_used || "";
+    document.getElementById("fieldNotes").value = order.field_notes || "";
+    document.getElementById("fieldCityUpdate").value = "";
+    document.getElementById("fieldCompletion").value = order.completion_summary || "";
+
+    renderFieldHistory(order);
+    setFieldMessage("");
+
+    const modal = document.getElementById("fieldModal");
+    modal.style.display = "";
+    modal.classList.remove("hidden");
+  } catch (err) {
+    console.error("Field workflow load:", err);
+    alert(err.message || "Unable to load technician workflow.");
+  }
+}
+
+async function saveFieldWorkflow() {
+  if (!activeFieldWorkOrder) return;
+
+  const completion = document.getElementById("fieldCompletion").value.trim();
+  if (pendingFieldStatus === "Completed" && !completion) {
+    setFieldMessage("Enter a completion summary before marking the work order Completed.", "error");
+    return;
+  }
+
+  const btn = document.getElementById("saveFieldUpdate");
+  btn.disabled = true;
+  btn.textContent = "Saving...";
+  setFieldMessage("");
+
+  try {
+    const fieldNotes = document.getElementById("fieldNotes").value.trim();
+    const materials = document.getElementById("fieldMaterials").value.trim();
+    const hours = Number(document.getElementById("fieldLaborHours").value || 0);
+    const cityUpdate = document.getElementById("fieldCityUpdate").value.trim();
+
+    const noteParts = [];
+    if (hours > 0) noteParts.push(`Labor hours: ${hours}`);
+    if (materials) noteParts.push(`Materials: ${materials}`);
+    if (fieldNotes) noteParts.push(`Field notes: ${fieldNotes}`);
+
+    const payload = {
+      work_order_number: activeFieldWorkOrder.work_order_number,
+      status: pendingFieldStatus,
+      labor_hours: hours,
+      materials_used: materials,
+      field_notes: fieldNotes,
+      completion_summary: completion,
+      technician_note: noteParts.join(" | "),
+      city_note: cityUpdate
+    };
+
+    const result = await window.SamsPortalAPI.updateWorkOrder(payload);
+    activeFieldWorkOrder = result.work_order;
+
+    document.getElementById("fieldCurrentStatus").textContent = activeFieldWorkOrder.status;
+    document.getElementById("fieldCityUpdate").value = "";
+    renderFieldHistory(activeFieldWorkOrder);
+    setFieldMessage("Field update saved.", "success");
+    await refreshLiveOrdersIfAvailable();
+  } catch (err) {
+    console.error("Field workflow save:", err);
+    setFieldMessage(err.message || "Unable to save field update.", "error");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Save Field Update";
+  }
+}
+
+document.addEventListener("click", async (e) => {
+  const fieldBtn = e.target.closest("[data-field-order]");
+  if (fieldBtn) {
+    e.preventDefault();
+    e.stopPropagation();
+    await openFieldWorkflow(fieldBtn.dataset.fieldOrder);
+    return;
+  }
+
+  const statusBtn = e.target.closest("[data-field-status]");
+  if (statusBtn) {
+    e.preventDefault();
+    pendingFieldStatus = statusBtn.dataset.fieldStatus;
+    document.getElementById("fieldCurrentStatus").textContent = pendingFieldStatus;
+    setFieldMessage(`Status will change to ${pendingFieldStatus} when you save.`, "success");
+  }
+});
+
+const saveFieldUpdate = document.getElementById("saveFieldUpdate");
+if (saveFieldUpdate) saveFieldUpdate.addEventListener("click", saveFieldWorkflow);
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const modal = document.getElementById("fieldModal");
+    if (modal && !modal.classList.contains("hidden")) {
+      modal.classList.add("hidden");
+      modal.style.display = "none";
+      activeFieldWorkOrder = null;
+      pendingFieldStatus = null;
+    }
+  }
 });
 
